@@ -1,0 +1,5 @@
+ideas
+
+program to "connect actors" ergo "connecting marvel actors tiktok"
+	probably could use graph like structure, and brute force a path solution that would loop back on itself
+	

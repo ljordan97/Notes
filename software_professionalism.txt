@@ -1,0 +1,91 @@
+#from idea to launch
+	#e.g. kitten academy
+
+	Feature (product) to be implemented: Video conferencing w vets
+
+	Titles and Roles:
+
+		product manager: "ship captain", in charge of rolling out 
+						 the feature at a high level, executes on design and development based on resources
+
+		project manager: oversees "epics", e.g. design epic for user
+						 flows, or dev epic for account management, communicates w developers and designers to 
+						 track progress, and keep product manager 
+						 updated
+
+		designer: 		 e.g. user flows, designs interactive elems,
+						 and layout of features, starting w wireframe
+
+		developer:		 coordinates with designer to understand 
+						 and implement features.
+						 e.g. designer wants drop down list of vets
+						 	seems simple, but requires a database
+						 	and authentication application for vets
+						 	expands scope too much, so developer 
+						 	tells this to project manager, who relays it to the product manager, who decides if this feature is critical to launch given the resources
+
+	Tools and Processes of dev cycle:
+		
+		Sprint cycle:
+
+			Planning:
+
+				Roadmapping: decide how long things take to build
+							 decide who will work tasks
+							 decide if tasks should be included 
+
+				Sprint Planning: inform team members of what will 
+								 happen during the next release cycle, and what priorities we will have
+
+			Execution:
+				 Sprints: team members get to work on tasks
+
+				 Backlog Grooming: look at other issues that may 
+				 				  have arisen, but maybe weren't a priority, get integrated as sprints
+
+				 Retros: team convenes to talk about what they 
+				 		 should keep doing, start doing, and stop 
+				 		 doing
+
+		Kanban Boards: used to keep track of priorities and issues
+					   during a sprint cycle
+
+					   places tickets into colums v
+
+					| In progress | Testing | Complete |
+
+					Types of tickets: 
+
+						Epic: High-level task e.g. user accounts
+
+						Story: subset of epic e.g. UI, appointment 
+							   dashboard, store & update pet info
+
+						Bug: unforeseen issue that creates problem 
+							 for users e.g. preventing international users
+
+		 Code Workflow: 
+
+		 		Git for version control
+
+		 			Developer finishes feature
+		 				submits pull request via git
+		 					others review to prevent conflicts
+
+	 					when request approved, it usually moves to QA for testing in a different environment
+
+#How to use developer documentation
+
+	e.g. python developer documentation
+		use quicksearch and general index
+
+		e.g. have list in python, want to sort alphabetically
+
+			Strategy:
+
+				indentifying datatype / structure working with
+					List
+
+				find functions available to manipulate data/code
+
+				search documentation for list functions

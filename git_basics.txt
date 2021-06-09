@@ -1,0 +1,60 @@
+3 parts to a Git project:
+	
+	1) a working directory: manage files here
+
+	2) staging area: where changes to working dir are listed
+
+	3) repository: where Git logs ^changes as project versions
+
+
+Workflow:
+
+	a) edit files in wd
+
+	b) add files to staging area
+
+	c) save changes to repo (commit)
+
+
+Create a new Git project:
+				
+	$ git init    //allows git cmds to be run in current dir
+				  //creates hidden subdirectory .git
+
+
+…or create a new repository on the command line
+
+	echo "# git_practice" >> README.md
+	git init
+	git add README.md
+	git commit -m "first commit"
+	git branch -M main
+	git remote add origin https://github.com/ljordan97/git_practice.git
+	git push -u origin main
+
+
+Check status of Git project:
+	
+	$ git status //shows current branch, current commit, 
+				 //untracked files, current added files
+
+
+Add files to commit:
+	
+	$ git add filename 
+
+
+Check changes to tracked file since last add:
+
+	$ git diff filename //shows changes as green +'s 
+
+
+Commiting files: 
+
+	$ git commit -m "<= 50 char message in present tense about changes"
+
+
+Refer back to old versions of project:
+
+	$ git log    //shows 40 char code called SHA, IDs commit
+				 //shows author, date, time, & message

@@ -1,0 +1,100 @@
+#background
+
+workspace = directory where you're developing
+
+ROS links workspaces
+
+the core workspace of ROS 2 is the "underlay"
+
+local workspaces are called the "overlay"
+
+setup files must be sourced in every new shell to 
+	allows diff packages to be used across different distros
+
+	source /opt/ros/melodic/setup.bash 
+		or just add to bashrc: 
+			$ echo "source /opt/ros/melodic/setup.bash" >> ~/.bashrc
+			$ source ~/.bashrc
+
+#
+# CREATING A NEW WORKSPACE
+#
+
+check ROS installation
+	$ printenv | grep ROS
+
+make a new ROS workspace (catkin)
+$ mkdir -p ~/catkin_ws/src
+$ cd ~/catkin_ws/
+$ catkin_make
+
+for python3 support, run this in a new ws
+$ catkin_make -DPYTHON_EXECUTABLE=/usr/bin/python3
+
+overlay new workspace
+$ source devel/setup.bash
+
+check if properly overlayed
+$ echo $ROS_PACKAGE_PATH
+/home/youruser/catkin_ws/src:/opt/ros/kinetic/share
+
+#
+# FILESYSTEM
+#
+
+get the tutorials
+sudo apt-get install ros-<distro>-ros-tutorials
+
+filesystem concepts
+package: unit of software in ROS, can contain libs/execs/scripts/etc.
+manifest (package.xml): describes a package, including dependencies, version, maintainer, license, etc.
+
+#rospack
+find a ros package
+$ rospack find [package_name]
+
+#roscd
+navigate to package dir
+$ roscd roscpp
+	NOTE: this can only find packages in the ROS_PACKAGE_PATH
+
+$ echo ROS_PACKAGE_PATH
+	can add dirs to path by separating with a colon
+
+navigate to log directory
+$ roscd log
+
+#rosls
+$ rosls roscpp_tutorials
+
+#
+# PACKAGES (catkin)
+#
+
+note: metapackage = package of packages
+
+make up of a package
+	must contain a compliant package.xml file
+	a CMakeLists.txt
+	must have its own folder
+
+recommended to make a catkin workspace for a package
+then use the catkin_create_pkg script to create a new package 
+
+E.g.  'beginner_tutorials' which depends on std_msgs, roscpp, and rospy:
+$ cd ~/catkin_ws/src
+$ catkin_create_pkg beginner_tutorials std_msgs rospy roscpp
+
+next, must build the packages in the catkin ws
+
+#review a package's 1st order dependencies
+$ rospack depends1 beginner_tutorials 
+
+#customizing the package
+
+edit package.xml
+	change description tag
+	update maintainer with name and email
+	 <maintainer email="user@todo.todo">user</maintainer>
+	 license tags (rest of the ROS core uses BSD) 
+	 license tags (rest of the ROS core uses BSD) 
