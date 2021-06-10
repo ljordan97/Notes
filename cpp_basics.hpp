@@ -6,6 +6,8 @@ class Song {
 
   public: 
     void add_title(std::string new_title);
-
+    static const int NumTurns = 5;
+	//if compiler complains, add this to implementation file
+		static int Song::NumTurns;
     std::string get_title();
 };
