@@ -200,3 +200,239 @@ const_cast<char&>(static_cast<const TextBlock&>(*this)[position])
 //create a class object, return ref to it
 //there is still possible initialization issues if this were multithreaded,
 //but this can be solved by calling all ref functions in the single thread init part
+
+//ITEM 5
+//Know what functions C++ silently calls
+//Empty classes are not really empty
+//C++ generates a constructor, destructor, and copy constructor, and a copy assignment operator
+//if needed
+class Empty{};
+Empty eq; //constructor generated (and also destructor)
+Empty e2(e1); //copy constructor generated
+e2 = e1; //copy assignment operator generated
+
+//the generated destructor is non-virtual (unless formed for inherited class whose base-class 
+//itself has declared a virtual destructor)
+
+//the generated copy constructor and operator simply copy each non-static data member
+//the generated copy constructor will initialize each member based on that member type's 
+//constructor
+	//i.e. objects with fields that are strings will call the string constructor
+	//for integral types, bits are just copied from object 1 to object 2
+//compiler can refuse to generate the operator if it doesnt make sense
+//i.e. when member data is const, or a reference, or copy assignment operator is inherited from a base class which made it private
+
+//ITEM 6
+//explicitly dis-allow the use of compiler-generated functions you do not want
+//implicitly defined copy constructors don't always make sense
+//what if each object is supposed to be unique?
+//how to fix this?
+//declare the copy constructor and copy assignment operator private
+	//they wont be generated automatically, and wont be accessible to new objects
+		//unless they are member and friend functions
+//TRUE FIX: declare them private, and do not define them
+	//but then must be aware that errors from calls are actually attmempted copying
+//you can also create an uncopyable class with a constructor and destructor, then privately 
+//define the copy constructor and copy assignment operator 
+	//make your class inherit from uncopyable
+		//this moves the error up from link time to compile time!
+
+//ITEM 7
+//declare destructors virtual for polymorphic base classes
+	//base classes with many derived types
+//when a derived class object is deleted through a base class pointer, results are undefined
+//the derived part of the object is never destroyed (makes sense)
+
+//e.g. factory function in base class, returns a base class pointer to derived object
+//factory function is called, and in the same scope deleted
+//since it is a base class pointer, the base class destructor will run
+//i.e. the derived destructor will never run
+//the derived bits will be left over, i.e. a partially destroyed object
+//easy way to leak, and/or corrupt data structures
+
+//very easy to avoid this, just make the base class destructor virtual
+//but if extending a class, look for virtual functions
+	//if they aren't there, the class probably isn't meant to function as a base
+		//having a virtual destructor in thiscase is probably a bad idea
+//derived objects should carry info about which virtual functions are needed
+	//this happens at runtime
+	//this info lives in a vptr, "virtual table pointer"
+		//points to an array of function pointers called the vtbl "virtual table"
+		//each class with virtual functions has a vtbl
+			//this increases the size of each object by 32 bits on 32b arch
+				//by 64bits on a 64b arch
+	//if an unintended base class had objects that were 64 bits, they could fit in a single
+	//register, and easily passed between languages, to C or FORTRAN
+		//these don't have the vptr, and so cannot receive objects naturally
+			//would need to compensate for the vptr (unportable)
+//rule of thumb: declare a base-class destructor virtual if and only if there's at least one 
+//virtual function
+
+
+//note: extending string bad, it doesn't have a virtual destructor or any virtual functions
+//NOTE: all STL containers lack a virtual destructor
+//there should be a way to restrict inheritance..is it possible to have a private constructor?
+	//answer, yes it is, but friends can still use it
+	//named constructor idiom
+		//all varying constructors listed as private or protected, and are accessed
+		//by calling a public static function
+	//if using a pure virtual destructor, MUST have a definition for it
+	//note on destructors: most-derived is called first, then goes down to base
+		//this is why pure virtuals still need a definition
+
+//ITEM 8
+//Prevent exceptions from leaving destructors
+//case: a vector of Widget objects is destroyed, so a destructor is called for each Widget
+//suppose one destructor call throws an exception, and a second one throws too 
+//C++ does not allow multiple exceptions. execution will either terminate or be undefined
+	//can try-catch destructors to terminate the program
+DBConn::~DBConn()
+{
+    try{ db.close(); }
+    catch(...) {
+	//make log entry that call to close failed
+	std::abort(); //make sure the program terminates
+    }
+
+	//can swallow the exception (bad idea in general)
+	//same as above, but without the abort
+	//can have a derived function to close the base object (resource manager)
+	//it can keep track of if the close was successful, and report it to client
+	
+	//transfer responsiblilty of closing base object from the derived destructor, to the 
+	//client
+		//but have backup sub-destructor in case they dont
+	
+//summary: try not to have destructors that throw exceptions
+	//if functions are used that can throw, make sure to try-catch them
+		//then swallow or terminate
+	//move sub-destruction to regular member function, so client can react to errors
+
+//ITEM 9
+//don't call virtual functions during construction or destruction
+//they don't do what you think when inside constructors or destructors
+
+//case: you have a base class Transactions for all types of stock transactions
+//all transactions must be auditable, so create a logTransaction function
+	//this is virtual because its type-dependent
+//if one wanted to log the creation of an object, they'd do it in the constructor,
+	//resulting in a call to a virtual function inside a constructor
+//when creating a derived object, it will call the base constructor first
+	//which then calls the virtual log function, but the object is of base type atm
+//same logic applies to destructors, because derived members get deleted, then the 
+//base constructor is called - it's just a base object at that point
+
+//if virtual functionality is needed at construction, simply make the necessary function 
+//non-virtual, but have it require information from the derived class
+//in the constructor of the derived class, when the base constructor is called, invoke the 
+//function, and have it return into the args of the base constructor, so that it may use 
+//the derived information
+//i.e. have a private, static, helper function to pass info to the base constructor
+
+
+//ITEM 10
+//Have assigment operators return a reference to *this
+//case: 
+int x, y, z;
+x = y = z = 15;
+//is the same as
+x = (y = (z = 15));
+//assignments are "right-associative", returing a reference to their left-hand argument
+
+//we should follow this convention when implementing assignment operators on user-defined types
+Widget& operator=(const Widget& rhs)
+{
+    ...
+    return *this; //return the left-hand object (left hand invokes operator)
+}
+
+//ITEM 11
+//handle assignment to self in operator=
+//"this looks silly, but is legal, so rest assured clients will do it"
+//assignment isn't always easily recognizable
+//remember base class references could point to a derived class object
+
+//case: a resource-managing class for a bitmap
+//it holds a raw pointer to a Bitmap object
+class Widget {
+    ...
+private:
+    Bitmap *pb;
+};
+
+//when assignment happens, the member data needs to be overwritten, but what happens during self assignment?
+Widget& Widget::operator=(const Widget& rhs)
+{
+    delete pb;                 //if self assignment is happening, the result is a pointer to a deleted object!
+    pb = new Bitmap(*rhs.pb);
+    return *this;
+}
+
+//how to fix? Throw in an identity test in the assignment operator definition
+//new assignment
+Widget& Widget::operator=(const Widget& rhs)
+{
+    if(this==&rhs) return *this; //simply self assign 
+    delete pb; //now safe
+    pb = new Bitmap(*rhs.pb); //potentially unsafe (if excpetion thrown), pb will still hold a pointer to a deleted object
+			      //like if there's not enough memory to allocate
+			      //here, a new Bitmap object is created, and then assigned to another value
+				//this invokes Bitmap's copy constructor, which could also throw an exception
+			      //this creates a toxic pointer, which can't be safely deleted or even read
+    return *this;
+}
+
+//how to fix? luckily, excpetion safe copy assignment is usually self-assignment safe as well
+Widget& Widget::operator=(const Widget& rhs)
+{
+   Bitmap *pOrig = pb;       //save old copy
+   pb = new Bitmap(*rhs.pb); //even if an exception is thrown here, pb remains unchanged
+   delete pOrig;             //delete only after info has been copied
+   return *this;
+}
+
+//this result is totally safe, but not super efficient (neither is the identity test)
+//judge the frequency with which self assignment could occur, and choose the best option from there
+
+//an alternative
+class Widget {
+   ...
+   void swap(Widget& rhs); //swap *this' and rhs' data
+   ...
+};
+
+Widget& Widget::operator=(const Widget& rhs)
+{
+   Widget temp(rhs); //note: this would happen implicitly if the parameter was pass-by-value, instead of const
+   swap(temp); //swap this and rhs 
+   return *this; //return invoking object\
+
+}
+
+
+//ITEM 12
+//Copy all parts of an object
+
+//only two functions *should* copy objects: the copy constructor, and copy assignment operator
+//we know that these can be auto-generated if ommitted from class definitions
+//the auto-generated versions copy all member data of an object
+
+//if you are declaring your own copy functions, the compiler will not know if you don't copy all member data
+
+//case: you define a copy constructor and copy assignment operator, and they copy all member data
+//when you add a data member, these don't update automatically, and the compiler won't let you know 
+
+//conclusion: UPDATE COPY FUNCTIONS ANY TIME A DATA MEMBER IS ADDED
+	//update the constructor too
+
+//insidious way to run into this problem: 
+//an inherited class' copy constructor does not call the base class copy constructor first
+//so unless all base member data is copied in the derived class' copy constructor, not all member data is being copied
+
+//good idea: call the base class copy constructor inside the derived class' copy constructor (member init list)
+
+//also make sure to call the base class constructor inside the derived class constructor (or member init list)
+//otherwise, the base object will be constructed with default arguments
+
+//note: though tempting, DON'T have one copy function call the other
+	//can avoid duplication by having a private init function that both can call
